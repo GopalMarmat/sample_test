@@ -4,38 +4,69 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    # ---------------------------------------
+    # 1 Checkout repository
+    # ---------------------------------------
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
+    # ---------------------------------------
+    # 2 Cache buildozer (speeds up builds)
+    # ---------------------------------------
+    - name: Cache buildozer global directory
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.buildozer
+          ~/.gradle
+        key: ${{ runner.os }}-buildozer-${{ hashFiles('buildozer.spec') }}
+        restore-keys: |
+          ${{ runner.os }}-buildozer-
+
+    # ---------------------------------------
+    # 3 Install system dependencies
+    # ---------------------------------------
     - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install -y zip unzip openjdk-17-jdk python3-pip git
+        sudo apt install -y \
+          git zip unzip openjdk-17-jdk \
+          python3-pip autoconf libtool pkg-config \
+          zlib1g-dev libncurses5-dev libffi-dev \
+          libssl-dev libsqlite3-dev ccache
 
-    - name: Install Buildozer
+    # ---------------------------------------
+    # 4 Install Python tools
+    # ---------------------------------------
+    - name: Install Python dependencies
       run: |
-        pip3 install buildozer
-        sudo apt install -y autoconf libtool pkg-config zlib1g-dev libncurses5-dev libffi-dev libssl-dev
+        python3 -m pip install --upgrade pip
+        pip3 install cython buildozer
 
-    - name: Initialize Buildozer (if not exists)
-      run: |
-        if [ ! -f buildozer.spec ]; then
-          buildozer init
-        fi
+    # ---------------------------------------
+    # 5 Accept Android SDK licenses
+    # ---------------------------------------
+    - name: Accept Android licenses
+      run: yes | buildozer android update
 
-    - name: Build APK
-      run: |
-        buildozer android debug
+    # ---------------------------------------
+    # 6 Build Debug APK
+    # ---------------------------------------
+    - name: Build Debug APK
+      run: buildozer -v android debug
 
+    # ---------------------------------------
+    # 7 Upload APK Artifact
+    # ---------------------------------------
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: interview-apk
+        name: interview-copilot-apk
         path: bin/*.apk
-
