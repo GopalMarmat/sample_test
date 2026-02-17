@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+python-multipart
+speechrecognition
+soundfile
+numpy
+langchain-openai
+langchain 
+langchain-core 
+langchain-community
+langchain-ollama
