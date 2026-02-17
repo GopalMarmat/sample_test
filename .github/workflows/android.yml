@@ -1,0 +1,40 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install system dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y zip unzip openjdk-17-jdk python3-pip git
+
+    - name: Install Buildozer
+      run: |
+        pip3 install buildozer
+        sudo apt install -y autoconf libtool pkg-config zlib1g-dev libncurses5-dev libffi-dev libssl-dev
+
+    - name: Initialize Buildozer (if not exists)
+      run: |
+        if [ ! -f buildozer.spec ]; then
+          buildozer init
+        fi
+
+    - name: Build APK
+      run: |
+        buildozer android debug
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: interview-apk
+        path: bin/*.apk
